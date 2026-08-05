@@ -265,3 +265,89 @@ def get_valuation(ticker):
             conn,
             params=(ticker,)
         )
+        
+@st.cache_data(ttl=600)
+def get_home_metrics(year):
+    """
+    Return company-level financial metrics for the selected calendar year.
+
+    If a company has more than one record in the selected year,
+    the latest available record is retained.
+    """
+
+    query = """
+        SELECT
+            f.company_id,
+            c.company_name,
+            s.broad_sector,
+            f.year,
+            f.return_on_equity_pct,
+            f.debt_to_equity,
+            f.revenue_cagr_5yr,
+            f.composite_quality_score,
+            f.free_cash_flow_cr,
+            f.pat_cagr_5yr
+        FROM financial_ratios f
+
+        LEFT JOIN companies c
+            ON f.company_id = c.id
+
+        LEFT JOIN sectors s
+            ON f.company_id = s.company_id
+
+        WHERE CAST(SUBSTR(f.year, -4) AS INTEGER) = ?
+    """
+
+    with get_connection() as conn:
+        df = pd.read_sql_query(
+            query,
+            conn,
+            params=(year,)
+        )
+
+    if not df.empty:
+        df = df.drop_duplicates(
+            subset=["company_id"],
+            keep="last"
+        )
+
+    return df
+@st.cache_data(ttl=600)
+def get_company_profile(ticker):
+    """
+    Return company profile, sector and pros/cons information.
+    """
+
+    query = """
+        SELECT
+            c.id AS company_id,
+            c.company_name,
+            c.company_logo,
+            c.about_company,
+            c.website,
+            c.face_value,
+            c.book_value,
+            c.roce_percentage,
+            c.roe_percentage,
+            s.broad_sector,
+            s.sub_sector,
+            s.market_cap_category,
+            pc.pros,
+            pc.cons
+        FROM companies c
+
+        LEFT JOIN sectors s
+            ON c.id = s.company_id
+
+        LEFT JOIN prosandcons pc
+            ON c.id = pc.company_id
+
+        WHERE UPPER(c.id) = UPPER(?)
+    """
+
+    with get_connection() as conn:
+        return pd.read_sql_query(
+            query,
+            conn,
+            params=(ticker,)
+        )
