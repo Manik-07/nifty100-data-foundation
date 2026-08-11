@@ -6,4 +6,4 @@ __pycache__/
 .vscode/
 .ipynb_checkpoints/
 logs/
-data/output/
+data/output/reports/_chart_cache/
