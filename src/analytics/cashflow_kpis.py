@@ -1191,3 +1191,107 @@ def build_intelligence():
 
 if __name__ == "__main__":
     build_intelligence()
+    
+# ============================================================
+# TEST / API COMPATIBILITY CLASS
+# ============================================================
+
+class CashFlowKPIs:
+
+    @staticmethod
+    def free_cash_flow(cfo, cfi):
+        """
+        Free Cash Flow = CFO + CFI
+        """
+        if cfo is None or cfi is None:
+            return None
+
+        return cfo + cfi
+
+    @staticmethod
+    def cfo_quality_score(cfo, pat):
+        """
+        CFO Quality based on CFO / PAT.
+
+        > 1.0  -> High Quality
+        >= 0.5 -> Moderate
+        < 0.5  -> Accrual Risk
+        """
+        if pat is None or pat == 0:
+            return None
+
+        if cfo is None:
+            return None
+
+        ratio = cfo / pat
+
+        if ratio > 1.0:
+            return "High Quality"
+        elif ratio >= 0.5:
+            return "Moderate"
+        else:
+            return "Accrual Risk"
+
+    @staticmethod
+    def capex_intensity(capex, sales):
+        """
+        CapEx Intensity = ABS(CapEx) / Sales * 100
+        """
+        if capex is None or sales is None:
+            return None
+
+        if sales <= 0:
+            return None
+
+        intensity = abs(capex) / sales * 100
+
+        if intensity < 3:
+            label = "Asset Light"
+        elif intensity <= 8:
+            label = "Moderate"
+        else:
+            label = "Capital Intensive"
+
+        return {
+            "value": round(intensity, 2),
+            "label": label,
+        }
+
+    @staticmethod
+    def fcf_conversion(fcf, pat):
+        """
+        FCF Conversion = FCF / PAT * 100
+        """
+        if fcf is None or pat is None:
+            return None
+
+        if pat == 0:
+            return None
+
+        return round((fcf / pat) * 100, 2)
+
+    @staticmethod
+    def capital_allocation_pattern(cfo, cfi, cff):
+        """
+        Classify capital allocation pattern.
+        """
+
+        if cfo is None or cfi is None or cff is None:
+            return "Unknown"
+
+        # Operating cash flow is negative while financing
+        # cash flow is positive -> distress
+        if cfo < 0 and cff > 0:
+            return "Distress Signal"
+
+        # Positive CFO + negative investing cash flow
+        # indicates reinvestment.
+        if cfo > 0 and cfi < 0:
+            return "Reinvestor"
+
+        # Positive CFO + positive investing cash flow
+        # indicates cash accumulation.
+        if cfo > 0 and cfi >= 0 and cff >= 0:
+            return "Cash Accumulator"
+
+        return "Other"
