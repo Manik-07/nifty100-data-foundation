@@ -8,3 +8,7 @@ __pycache__/
 logs/
 data/output/reports/_chart_cache/
 /data/output/
+
+# Generated analytics outputs
+/output/
+/reports/
